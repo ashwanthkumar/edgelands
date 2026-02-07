@@ -33,6 +33,9 @@ export class Game {
     this.shakeIntensity = 0;
     this.shakeDecay = 8;
 
+    // Pause
+    this.paused = false;
+
     // Refs set by main.js
     this.particleSystem = null;
     this.player = null;
@@ -107,6 +110,11 @@ export class Game {
   _animate() {
     requestAnimationFrame(() => this._animate());
     const dt = Math.min(this.clock.getDelta(), 0.05); // cap delta
+
+    if (this.paused) {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     // Update all systems
     this.tweens.update(dt);
