@@ -12,6 +12,8 @@ import { Minimap } from './ui/Minimap.js';
 import { DeathScreen } from './ui/DeathScreen.js';
 import { Settings } from './ui/Settings.js';
 import { TitleScreen } from './ui/TitleScreen.js';
+import { ZoneClearOverlay } from './ui/ZoneClearOverlay.js';
+import { HelpOverlay } from './ui/HelpOverlay.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
@@ -75,6 +77,14 @@ game.addSystem(deathScreen);
 const settings = new Settings(game);
 game.settings = settings;
 game.addSystem(settings);
+
+// Zone clear overlay
+const zoneClearOverlay = new ZoneClearOverlay();
+game.zoneClearOverlay = zoneClearOverlay;
+
+// Help overlay
+const helpOverlay = new HelpOverlay(game);
+game.helpOverlay = helpOverlay;
 
 // Title screen — defer game start until player clicks "Start Game"
 const titleScreen = new TitleScreen(() => {
