@@ -13,7 +13,7 @@ export class CreditsOverlay {
         <h2 class="credits-title">Credits</h2>
         <div class="credits-section">
           <h3>Created By</h3>
-          <div class="credits-row"><span>Ashwanth Kumar</span></div>
+          <div class="credits-row"><a href="https://www.linkedin.com/in/ashwanthkumar/" target="_blank" rel="noopener">Ashwanth Kumar</a></div>
         </div>
         <div class="credits-section">
           <h3>Built With</h3>

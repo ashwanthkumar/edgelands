@@ -763,6 +763,18 @@ html, body {
   letter-spacing: 2px;
 }
 
+.credits-row a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.credits-row a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
 .credits-section {
   margin-bottom: 16px;
 }
