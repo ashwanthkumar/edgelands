@@ -14,7 +14,8 @@ export class DeathScreen {
     const weapon = this.game.player ? this.game.player.weapon.name : 'Grass Stick';
     const zone = this.game.player ? this.game.player.getCurrentZone() : 0;
 
-    const shareText = `I scored ${points} points in EDGELANDS and reached zone ${zone}! Can you beat my score?`;
+    const gameUrl = 'https://ashwanthkumar.github.io/edgelands/';
+    const shareText = `I scored ${points} points in EDGELANDS and reached zone ${zone}! Can you beat my score?\n\n${gameUrl}`;
     const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
     this.container.innerHTML = `
