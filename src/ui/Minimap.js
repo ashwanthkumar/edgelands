@@ -38,6 +38,17 @@ export class Minimap {
       ctx.fill();
     }
 
+    // Draw safe zone circles
+    for (const [, sz] of ZoneManager._safeZones) {
+      const sx = center + sz.x * scale;
+      const sz2 = center + sz.z * scale;
+      const sr = sz.radius * scale;
+      ctx.beginPath();
+      ctx.arc(sx, sz2, Math.max(sr, 1.5), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(68, 255, 136, 0.5)';
+      ctx.fill();
+    }
+
     // Draw enemy dots
     if (this.game.enemyManager) {
       ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';

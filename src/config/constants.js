@@ -21,16 +21,16 @@ export function getDifficultyKey() { return _currentDifficulty; }
 
 export const BASE_ZONES = [
   { name: 'Sanctuary',      innerRadius: 0,    outerRadius: 15,   color: 0x7ec850, enemyCount: 0,  speedMultiplier: 1.0 },
-  { name: 'Grasslands',     innerRadius: 15,   outerRadius: 50,   color: 0x8bba42, enemyCount: 20, speedMultiplier: 0.8 },
-  { name: 'Dark Woods',     innerRadius: 50,   outerRadius: 100,  color: 0x4a7a2e, enemyCount: 31, speedMultiplier: 0.9 },
-  { name: 'Scorched Flats', innerRadius: 100,  outerRadius: 165,  color: 0xb8860b, enemyCount: 40, speedMultiplier: 1.0 },
-  { name: 'Crimson Wastes', innerRadius: 165,  outerRadius: 245,  color: 0x8b2500, enemyCount: 46, speedMultiplier: 1.1 },
-  { name: 'Frozen Abyss',   innerRadius: 245,  outerRadius: 345,  color: 0x4a6fa5, enemyCount: 51, speedMultiplier: 1.2 },
-  { name: 'Void Lands',     innerRadius: 345,  outerRadius: 465,  color: 0x2d1b4e, enemyCount: 56, speedMultiplier: 1.4 },
-  { name: 'Mythic Core',    innerRadius: 465,  outerRadius: 600,  color: 0x1a0020, enemyCount: 60, speedMultiplier: 1.6 },
-  { name: 'Phantom Reach',  innerRadius: 600,  outerRadius: 750,  color: 0x3a0050, enemyCount: 63, speedMultiplier: 1.7 },
-  { name: 'Astral Wastes',  innerRadius: 750,  outerRadius: 920,  color: 0x004466, enemyCount: 66, speedMultiplier: 1.8 },
-  { name: 'Eternal Depths', innerRadius: 920,  outerRadius: 1110, color: 0x111133, enemyCount: 69, speedMultiplier: 1.9 },
+  { name: 'Grasslands',     innerRadius: 15,   outerRadius: 50,   color: 0x8bba42, enemyCount: 20,  speedMultiplier: 0.8 },
+  { name: 'Dark Woods',     innerRadius: 50,   outerRadius: 100,  color: 0x4a7a2e, enemyCount: 24,  speedMultiplier: 0.9 },
+  { name: 'Scorched Flats', innerRadius: 100,  outerRadius: 165,  color: 0xb8860b, enemyCount: 29,  speedMultiplier: 1.0 },
+  { name: 'Crimson Wastes', innerRadius: 165,  outerRadius: 245,  color: 0x8b2500, enemyCount: 35,  speedMultiplier: 1.1 },
+  { name: 'Frozen Abyss',   innerRadius: 245,  outerRadius: 345,  color: 0x4a6fa5, enemyCount: 41,  speedMultiplier: 1.2 },
+  { name: 'Void Lands',     innerRadius: 345,  outerRadius: 465,  color: 0x2d1b4e, enemyCount: 50,  speedMultiplier: 1.4 },
+  { name: 'Mythic Core',    innerRadius: 465,  outerRadius: 600,  color: 0x1a0020, enemyCount: 60,  speedMultiplier: 1.6 },
+  { name: 'Phantom Reach',  innerRadius: 600,  outerRadius: 750,  color: 0x3a0050, enemyCount: 72,  speedMultiplier: 1.7 },
+  { name: 'Astral Wastes',  innerRadius: 750,  outerRadius: 920,  color: 0x004466, enemyCount: 86,  speedMultiplier: 1.8 },
+  { name: 'Eternal Depths', innerRadius: 920,  outerRadius: 1110, color: 0x111133, enemyCount: 103, speedMultiplier: 1.9 },
 ];
 
 const GENERATED_ZONE_NAMES = [
@@ -52,9 +52,40 @@ function hslToHex(h, s, l) {
   return (f(0) << 16) | (f(8) << 8) | f(4);
 }
 
+export const SAFE_ZONE_RADIUS = 5;
+
 class _ZoneManager {
   constructor() {
     this._cache = [...BASE_ZONES];
+    this._safeZones = new Map();
+  }
+
+  getSafeZone(zoneIndex) {
+    if (zoneIndex < 3) return null;
+    if (this._safeZones.has(zoneIndex)) return this._safeZones.get(zoneIndex);
+
+    const zone = this.getZone(zoneIndex);
+    const angle = (zoneIndex * 137.5) * (Math.PI / 180);
+    const minR = zone.innerRadius + 6;
+    const maxR = zone.outerRadius - 6;
+    const r = minR + ((zoneIndex * 0.618) % 1) * (maxR - minR);
+
+    const sz = {
+      x: Math.cos(angle) * r,
+      z: Math.sin(angle) * r,
+      radius: SAFE_ZONE_RADIUS,
+    };
+    this._safeZones.set(zoneIndex, sz);
+    return sz;
+  }
+
+  isInSafeZone(x, z) {
+    for (const [, sz] of this._safeZones) {
+      const dx = x - sz.x;
+      const dz = z - sz.z;
+      if (dx * dx + dz * dz <= sz.radius * sz.radius) return true;
+    }
+    return false;
   }
 
   getZone(index) {
@@ -68,7 +99,7 @@ class _ZoneManager {
       const outerRadius = innerRadius + 120 + (i - 10) * 15;
       const hue = (i * 47) % 360;
       const color = hslToHex(hue, 60, 35);
-      const enemyCount = Math.floor(20 * Math.log2(i + 1));
+      const enemyCount = Math.floor(20 * Math.pow(1.2, i - 1));
       const nameIndex = (i - BASE_ZONES.length) % GENERATED_ZONE_NAMES.length;
       const name = GENERATED_ZONE_NAMES[nameIndex] + (i >= BASE_ZONES.length + GENERATED_ZONE_NAMES.length ? ` ${Math.floor((i - BASE_ZONES.length) / GENERATED_ZONE_NAMES.length) + 1}` : '');
 

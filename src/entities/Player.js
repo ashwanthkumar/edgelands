@@ -252,7 +252,7 @@ export class Player {
     this._zoneBlockedCooldown -= dt;
 
     // Safe zone HP regen
-    if (this.getCurrentZone() === 0 && this.hp < this.maxHp) {
+    if ((this.getCurrentZone() === 0 || ZoneManager.isInSafeZone(this.mesh.position.x, this.mesh.position.z)) && this.hp < this.maxHp) {
       this._regenTimer += dt;
       if (this._regenTimer >= 1) {
         this._regenTimer -= 1;

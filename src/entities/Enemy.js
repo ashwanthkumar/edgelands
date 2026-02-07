@@ -236,7 +236,7 @@ export class Enemy {
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     const em = this.game.enemyManager;
-    if (dist < ENEMY.chaseRange && em && em.zoneUnlocked[this.zoneIndex]) {
+    if (dist < ENEMY.chaseRange && em && em.zoneUnlocked[this.zoneIndex] && !ZoneManager.isInSafeZone(player.mesh.position.x, player.mesh.position.z)) {
       this.state = 'chase';
       this._chase(dt, dx, dz, dist);
     } else {

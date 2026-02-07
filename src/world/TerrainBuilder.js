@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_ZONES } from '../config/constants.js';
+import { BASE_ZONES, ZoneManager } from '../config/constants.js';
 
 export class TerrainBuilder {
   constructor(scene) {
@@ -17,6 +17,12 @@ export class TerrainBuilder {
 
     // Safe zone ring at Sanctuary outer edge
     this._addSafeZoneRing();
+
+    // Safe zone circles for zones 3+
+    for (let i = 3; i < BASE_ZONES.length; i++) {
+      const sz = ZoneManager.getSafeZone(i);
+      if (sz) this._addSafeZoneCircle(sz);
+    }
   }
 
   _addSafeZoneRing() {
@@ -37,6 +43,27 @@ export class TerrainBuilder {
     const ring = this._createRing(zone, index);
     this.rings.push(ring);
     this.scene.add(ring);
+
+    if (index >= 3) {
+      const sz = ZoneManager.getSafeZone(index);
+      if (sz) this._addSafeZoneCircle(sz);
+    }
+  }
+
+  _addSafeZoneCircle(safeZone) {
+    const geo = new THREE.CircleGeometry(safeZone.radius, 32);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x44ff88,
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(safeZone.x, 0.25, safeZone.z);
+    mesh.renderOrder = 1;
+    this.scene.add(mesh);
   }
 
   _createRing(zone, index) {

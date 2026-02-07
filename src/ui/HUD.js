@@ -60,11 +60,8 @@ export class HUD {
     this.zoneText.style.color = colorToHex(zone.color);
 
     // Safe zone indicator
-    if (zi === 0) {
-      this.safeZoneText.style.display = 'block';
-    } else {
-      this.safeZoneText.style.display = 'none';
-    }
+    const inSafeZone = zi === 0 || ZoneManager.isInSafeZone(p.mesh.position.x, p.mesh.position.z);
+    this.safeZoneText.style.display = inSafeZone ? 'block' : 'none';
 
     // Zone progress
     if (this.game.enemyManager) {
