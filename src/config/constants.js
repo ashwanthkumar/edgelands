@@ -9,9 +9,9 @@ export const PLAYER = {
 };
 
 export const DIFFICULTY = {
-  easy:   { hitsToKill: 3, label: 'Easy' },
-  medium: { hitsToKill: 5, label: 'Medium' },
-  hard:   { hitsToKill: 7, label: 'Hard' },
+  easy:   { hitsToKill: 1, label: 'Easy' },
+  medium: { hitsToKill: 2, label: 'Medium' },
+  hard:   { hitsToKill: 3, label: 'Hard' },
 };
 
 let _currentDifficulty = 'easy';
