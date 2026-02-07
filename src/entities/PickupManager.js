@@ -46,10 +46,16 @@ export class PickupManager {
         continue;
       }
 
-      // Collection check
+      // Magnet: attract toward player
       const dx = pickup.mesh.position.x - px;
       const dz = pickup.mesh.position.z - pz;
       const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist < DROPS.magnetRadius && dist > DROPS.collectRadius) {
+        const pull = DROPS.magnetSpeed * dt / dist;
+        pickup.mesh.position.x -= dx * pull;
+        pickup.mesh.position.z -= dz * pull;
+      }
 
       if (dist < DROPS.collectRadius) {
         this._collect(pickup);
