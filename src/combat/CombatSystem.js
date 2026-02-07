@@ -38,7 +38,7 @@ export class CombatSystem {
       );
 
       if (angle <= PLAYER.attackArc / 2) {
-        const damage = player.weapon.damage;
+        const damage = player.getDamage();
         enemy.takeDamage(damage);
 
         if (this.game.damageNumbers) {

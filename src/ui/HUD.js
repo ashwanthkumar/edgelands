@@ -43,15 +43,13 @@ export class HUD {
     this.pointsText.textContent = `Points: ${this._formatNum(p.points)}`;
 
     // Weapon
-    this.weaponText.textContent = `${p.weapon.name} (${p.weapon.damage} dmg)`;
+    this.weaponText.textContent = `${p.weapon.name} (${p.getDamage()} dmg)`;
 
-    // Upgrade countdown
+    // Upgrade info
     if (p.weaponIndex >= WEAPONS.length - 1) {
       this.nextUpgradeText.textContent = 'MAX WEAPON';
     } else {
-      const next = WEAPONS[p.weaponIndex + 1];
-      const remaining = next.threshold - p.points;
-      this.nextUpgradeText.textContent = `Next: ${this._formatNum(remaining)} pts`;
+      this.nextUpgradeText.textContent = `Clear zone to upgrade`;
     }
 
     // Zone

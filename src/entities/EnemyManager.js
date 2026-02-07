@@ -51,12 +51,18 @@ export class EnemyManager {
       }
       if (!this.zoneUnlocked[nextZone]) {
         this.zoneUnlocked[nextZone] = true;
-        // Refill player HP as zone clear reward
+        // Upgrade weapon and refill HP as zone clear reward
         if (this.game.player) {
+          this.game.player.upgradeWeapon();
           this.game.player.hp = this.game.player.maxHp;
         }
         if (this.game.audioManager) {
           this.game.audioManager.play('zoneUnlock');
+        }
+        // Zone clear celebration
+        if (this.game.zoneClearOverlay) {
+          const nextZoneData = ZoneManager.getZone(nextZone);
+          this.game.zoneClearOverlay.show(zone.name, nextZoneData.name);
         }
       }
     }

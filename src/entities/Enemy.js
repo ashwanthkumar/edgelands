@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ENEMY, ZoneManager } from '../config/constants.js';
+import { ENEMY, ZoneManager, getDifficulty } from '../config/constants.js';
 
 const ZONE_GEOMETRIES = [
   null, // zone 0: no enemies
@@ -23,8 +23,8 @@ export class Enemy {
     this.game = game;
     this.zoneIndex = zoneIndex;
     this.zone = ZoneManager.getZone(zoneIndex);
-    this.strength = this.zone.enemyStrength;
-    this.maxHp = this.strength;
+    this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
+    this.strength = this.maxHp; // backward compat for drops/labels
     this.hp = this.maxHp;
     this.alive = true;
     this.attackCooldownTimer = 0;
@@ -222,7 +222,7 @@ export class Enemy {
     const em = this.game.enemyManager;
     if (dist < 1.5 && this.attackCooldownTimer <= 0 && em && em.zoneUnlocked[this.zoneIndex]) {
       this.attackCooldownTimer = ENEMY.attackCooldown;
-      const damage = this.strength * ENEMY.damageMultiplier;
+      const damage = this.zoneIndex * 2;
       this.game.player.takeDamage(damage);
       if (this.game.audioManager) {
         this.game.audioManager.play('hit');
@@ -302,6 +302,8 @@ export class Enemy {
 
   _respawn() {
     this.alive = true;
+    this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
+    this.strength = this.maxHp;
     this.hp = this.maxHp;
     this.mesh.visible = true;
     this._placeInZone();

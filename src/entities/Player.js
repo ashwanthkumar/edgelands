@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER, WEAPONS, ZoneManager } from '../config/constants.js';
+import { PLAYER, WEAPONS, ZoneManager, getDifficulty, getDifficultyKey, setDifficulty } from '../config/constants.js';
 import { WeaponFactory } from '../combat/WeaponFactory.js';
 
 const _PI = Math.PI;
@@ -186,8 +186,8 @@ export class Player {
     // Safe zone HP regen
     if (this.getCurrentZone() === 0 && this.hp < this.maxHp) {
       this._regenTimer += dt;
-      if (this._regenTimer >= 10) {
-        this._regenTimer -= 10;
+      if (this._regenTimer >= 1) {
+        this._regenTimer -= 1;
         this.hp = Math.min(this.hp + 1, this.maxHp);
         // Heal VFX: ring of rising particles
         if (this.game.particleSystem) {
@@ -340,34 +340,28 @@ export class Player {
 
   addPoints(amount) {
     this.points += amount;
-    this._checkWeaponUpgrade();
     this.save();
   }
 
   multiplyPoints(multiplier) {
     this.points = Math.floor(this.points * multiplier);
-    this._checkWeaponUpgrade();
     this.save();
   }
 
-  _checkWeaponUpgrade() {
-    let newIndex = 0;
-    for (let i = WEAPONS.length - 1; i >= 0; i--) {
-      if (this.points >= WEAPONS[i].threshold) {
-        newIndex = i;
-        break;
-      }
+  upgradeWeapon() {
+    if (this.weaponIndex >= WEAPONS.length - 1) return;
+    this.weaponIndex++;
+    this.weapon = WEAPONS[this.weaponIndex];
+    this.maxHp = this.weapon.maxHp;
+    this.hp = this.maxHp;
+    this._buildWeaponMesh();
+    if (this.game.audioManager) {
+      this.game.audioManager.play('levelup');
     }
-    if (newIndex !== this.weaponIndex) {
-      this.weaponIndex = newIndex;
-      this.weapon = WEAPONS[newIndex];
-      this.maxHp = this.weapon.maxHp;
-      this.hp = Math.min(this.hp, this.maxHp);
-      this._buildWeaponMesh();
-      if (this.game.audioManager) {
-        this.game.audioManager.play('levelup');
-      }
-    }
+  }
+
+  getDamage() {
+    return this.weaponIndex + 1;
   }
 
   getCurrentZone() {
@@ -381,6 +375,7 @@ export class Player {
     const data = {
       points: this.points,
       weaponIndex: this.weaponIndex,
+      difficulty: getDifficultyKey(),
     };
     try {
       localStorage.setItem('edgelands_save', JSON.stringify(data));
@@ -395,6 +390,9 @@ export class Player {
       // Backward compat: support old 'strength' key
       this.points = data.points || data.strength || PLAYER.startPoints;
       this.weaponIndex = data.weaponIndex || 0;
+      if (data.difficulty) {
+        setDifficulty(data.difficulty);
+      }
       this.weapon = WEAPONS[this.weaponIndex];
       this.maxHp = this.weapon.maxHp;
       this.hp = this.maxHp;

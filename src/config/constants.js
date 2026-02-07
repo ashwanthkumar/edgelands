@@ -8,15 +8,29 @@ export const PLAYER = {
   size: 0.5,
 };
 
+export const DIFFICULTY = {
+  easy:   { hitsToKill: 3, label: 'Easy' },
+  medium: { hitsToKill: 5, label: 'Medium' },
+  hard:   { hitsToKill: 7, label: 'Hard' },
+};
+
+let _currentDifficulty = 'easy';
+export function getDifficulty() { return DIFFICULTY[_currentDifficulty]; }
+export function setDifficulty(key) { _currentDifficulty = key; }
+export function getDifficultyKey() { return _currentDifficulty; }
+
 export const BASE_ZONES = [
-  { name: 'Sanctuary',      innerRadius: 0,   outerRadius: 15,  enemyStrength: 0,   color: 0x7ec850, enemyCount: 0,  speedMultiplier: 1.0 },
-  { name: 'Grasslands',     innerRadius: 15,  outerRadius: 50,  enemyStrength: 6,   color: 0x8bba42, enemyCount: 20, speedMultiplier: 0.8 },
-  { name: 'Dark Woods',     innerRadius: 50,  outerRadius: 100, enemyStrength: 30,  color: 0x4a7a2e, enemyCount: 31, speedMultiplier: 0.9 },
-  { name: 'Scorched Flats', innerRadius: 100, outerRadius: 165, enemyStrength: 90,  color: 0xb8860b, enemyCount: 40, speedMultiplier: 1.0 },
-  { name: 'Crimson Wastes', innerRadius: 165, outerRadius: 245, enemyStrength: 180, color: 0x8b2500, enemyCount: 46, speedMultiplier: 1.1 },
-  { name: 'Frozen Abyss',   innerRadius: 245, outerRadius: 345, enemyStrength: 300, color: 0x4a6fa5, enemyCount: 51, speedMultiplier: 1.2 },
-  { name: 'Void Lands',     innerRadius: 345, outerRadius: 465, enemyStrength: 450, color: 0x2d1b4e, enemyCount: 56, speedMultiplier: 1.4 },
-  { name: 'Mythic Core',    innerRadius: 465, outerRadius: 600, enemyStrength: 900, color: 0x1a0020, enemyCount: 60, speedMultiplier: 1.6 },
+  { name: 'Sanctuary',      innerRadius: 0,    outerRadius: 15,   color: 0x7ec850, enemyCount: 0,  speedMultiplier: 1.0 },
+  { name: 'Grasslands',     innerRadius: 15,   outerRadius: 50,   color: 0x8bba42, enemyCount: 20, speedMultiplier: 0.8 },
+  { name: 'Dark Woods',     innerRadius: 50,   outerRadius: 100,  color: 0x4a7a2e, enemyCount: 31, speedMultiplier: 0.9 },
+  { name: 'Scorched Flats', innerRadius: 100,  outerRadius: 165,  color: 0xb8860b, enemyCount: 40, speedMultiplier: 1.0 },
+  { name: 'Crimson Wastes', innerRadius: 165,  outerRadius: 245,  color: 0x8b2500, enemyCount: 46, speedMultiplier: 1.1 },
+  { name: 'Frozen Abyss',   innerRadius: 245,  outerRadius: 345,  color: 0x4a6fa5, enemyCount: 51, speedMultiplier: 1.2 },
+  { name: 'Void Lands',     innerRadius: 345,  outerRadius: 465,  color: 0x2d1b4e, enemyCount: 56, speedMultiplier: 1.4 },
+  { name: 'Mythic Core',    innerRadius: 465,  outerRadius: 600,  color: 0x1a0020, enemyCount: 60, speedMultiplier: 1.6 },
+  { name: 'Phantom Reach',  innerRadius: 600,  outerRadius: 750,  color: 0x3a0050, enemyCount: 63, speedMultiplier: 1.7 },
+  { name: 'Astral Wastes',  innerRadius: 750,  outerRadius: 920,  color: 0x004466, enemyCount: 66, speedMultiplier: 1.8 },
+  { name: 'Eternal Depths', innerRadius: 920,  outerRadius: 1110, color: 0x111133, enemyCount: 69, speedMultiplier: 1.9 },
 ];
 
 const GENERATED_ZONE_NAMES = [
@@ -51,21 +65,19 @@ class _ZoneManager {
     for (let i = this._cache.length; i <= index; i++) {
       const prev = this._cache[i - 1];
       const innerRadius = prev.outerRadius;
-      const outerRadius = innerRadius + 120 + (i - 7) * 15;
-      const enemyStrength = Math.floor(2400 * Math.pow(1.5, i - 7));
+      const outerRadius = innerRadius + 120 + (i - 10) * 15;
       const hue = (i * 47) % 360;
       const color = hslToHex(hue, 60, 35);
       const enemyCount = Math.floor(20 * Math.log2(i + 1));
       const nameIndex = (i - BASE_ZONES.length) % GENERATED_ZONE_NAMES.length;
       const name = GENERATED_ZONE_NAMES[nameIndex] + (i >= BASE_ZONES.length + GENERATED_ZONE_NAMES.length ? ` ${Math.floor((i - BASE_ZONES.length) / GENERATED_ZONE_NAMES.length) + 1}` : '');
 
-      const speedMultiplier = Math.min(1.6 + (i - 7) * 0.1, 3.0);
+      const speedMultiplier = Math.min(1.9 + (i - 10) * 0.1, 3.0);
 
       this._cache[i] = {
         name,
         innerRadius,
         outerRadius,
-        enemyStrength,
         color,
         enemyCount,
         speedMultiplier,
@@ -98,14 +110,17 @@ export const ZoneManager = new _ZoneManager();
 export const ZONES = BASE_ZONES;
 
 export const WEAPONS = [
-  { threshold: 0,     name: 'Grass Stick',     damage: 2,   color: 0x7ec850, maxHp: 10  },
-  { threshold: 50,    name: 'Wooden Club',     damage: 10,  color: 0x8b5e3c, maxHp: 40  },
-  { threshold: 500,   name: 'Iron Sword',      damage: 30,  color: 0xaaaaaa, maxHp: 100 },
-  { threshold: 2500,  name: 'Steel Blade',     damage: 60,  color: 0xc0c0c0, maxHp: 200 },
-  { threshold: 8000,  name: 'Golden Sword',    damage: 100, color: 0xffd700, maxHp: 300 },
-  { threshold: 18000, name: 'Diamond Sword',   damage: 150, color: 0x00ffff, maxHp: 450 },
-  { threshold: 35000, name: 'Legendary Blade', damage: 300, color: 0xff4500, maxHp: 500 },
-  { threshold: 70000, name: 'Mythic Sword',    damage: 800, color: 0xff00ff, maxHp: 500 },
+  { name: 'Grass Stick',     color: 0x7ec850, maxHp: 10  },  // level 0, dmg 1
+  { name: 'Wooden Club',     color: 0x8b5e3c, maxHp: 15  },  // level 1, dmg 2
+  { name: 'Iron Sword',      color: 0xaaaaaa, maxHp: 25  },  // level 2, dmg 3
+  { name: 'Steel Blade',     color: 0xc0c0c0, maxHp: 35  },  // level 3, dmg 4
+  { name: 'Golden Sword',    color: 0xffd700, maxHp: 45  },  // level 4, dmg 5
+  { name: 'Diamond Sword',   color: 0x00ffff, maxHp: 55  },  // level 5, dmg 6
+  { name: 'Legendary Blade', color: 0xff4500, maxHp: 65  },  // level 6, dmg 7
+  { name: 'Mythic Sword',    color: 0xff00ff, maxHp: 75  },  // level 7, dmg 8
+  { name: 'Void Cleaver',    color: 0x6600cc, maxHp: 85  },  // level 8, dmg 9
+  { name: 'Astral Edge',     color: 0x00ffaa, maxHp: 92  },  // level 9, dmg 10
+  { name: 'Eternal Blade',   color: 0xffffff, maxHp: 100 },  // level 10, dmg 11
 ];
 
 export const DROPS = {
@@ -119,12 +134,13 @@ export const DROPS = {
   ],
   despawnTime: 30,
   collectRadius: 1.5,
+  magnetRadius: 8,
+  magnetSpeed: 12,
 };
 
 export const ENEMY = {
   chaseRange: 6,
   attackCooldown: 1,
-  damageMultiplier: 0.2,
   respawnTimeMin: 5,
   respawnTimeMax: 10,
   wanderSpeed: 1.5,
