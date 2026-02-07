@@ -4,6 +4,16 @@ A 3D action game built with Three.js where you fight your way through increasing
 
 **[Play now](https://ashwanthkumar.github.io/edgelands/)**
 
+![Title Screen](screenshots/title-screen.png)
+
+![Gameplay](screenshots/gameplay.png)
+
+![Combat](screenshots/combat.png)
+
+![Credits](screenshots/credits.png)
+
+![Help](screenshots/help.png)
+
 ## How to Play
 
 - **WASD** to move, **Space** or **Click** to attack
