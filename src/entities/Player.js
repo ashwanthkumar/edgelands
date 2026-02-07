@@ -28,6 +28,11 @@ export class Player {
     this.weaponIndex = 0;
     this.weapon = WEAPONS[0];
 
+    // Animation state
+    this._walkPhase = 0;
+    this._idlePhase = 0;
+    this._isMoving = false;
+
     // Build mesh
     this.mesh = new THREE.Group();
     this._buildBody();
@@ -49,14 +54,22 @@ export class Player {
     const capeMat = new THREE.MeshLambertMaterial({ color: 0x3b1a1a });
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
 
-    // Legs (two cylinders)
+    // --- Legs with pivot joints at hips ---
     const legGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.3, 6);
+
+    this.leftLegPivot = new THREE.Group();
+    this.leftLegPivot.position.set(-0.09, 0.30, 0); // hip joint
     const legL = new THREE.Mesh(legGeo, pantsMat);
-    legL.position.set(-0.09, 0.15, 0);
-    this.bodyMesh.add(legL);
+    legL.position.set(0, -0.15, 0); // hangs down from pivot
+    this.leftLegPivot.add(legL);
+    this.bodyMesh.add(this.leftLegPivot);
+
+    this.rightLegPivot = new THREE.Group();
+    this.rightLegPivot.position.set(0.09, 0.30, 0); // hip joint
     const legR = new THREE.Mesh(legGeo, pantsMat);
-    legR.position.set(0.09, 0.15, 0);
-    this.bodyMesh.add(legR);
+    legR.position.set(0, -0.15, 0);
+    this.rightLegPivot.add(legR);
+    this.bodyMesh.add(this.rightLegPivot);
 
     // Torso
     const torsoGeo = new THREE.BoxGeometry(0.35, 0.4, 0.2);
@@ -70,20 +83,34 @@ export class Player {
     belt.position.y = 0.32;
     this.bodyMesh.add(belt);
 
-    // Arms (two cylinders)
+    // --- Arms with pivot joints at shoulders ---
     const armGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.35, 6);
+
+    this.leftArmPivot = new THREE.Group();
+    this.leftArmPivot.position.set(-0.24, 0.65, 0); // shoulder
     const armL = new THREE.Mesh(armGeo, skinMat);
-    armL.position.set(-0.24, 0.48, 0);
-    this.bodyMesh.add(armL);
+    armL.position.set(0, -0.175, 0); // hangs down from shoulder
+    this.leftArmPivot.add(armL);
+    this.bodyMesh.add(this.leftArmPivot);
+
+    this.rightArmPivot = new THREE.Group();
+    this.rightArmPivot.position.set(0.24, 0.65, 0); // shoulder
     const armR = new THREE.Mesh(armGeo, skinMat);
-    armR.position.set(0.24, 0.48, 0);
-    this.bodyMesh.add(armR);
+    armR.position.set(0, -0.175, 0);
+    this.rightArmPivot.add(armR);
+
+    // Hand anchor at end of right arm for weapon
+    this.handAnchor = new THREE.Group();
+    this.handAnchor.position.set(0, -0.35, 0); // end of arm
+    this.rightArmPivot.add(this.handAnchor);
+
+    this.bodyMesh.add(this.rightArmPivot);
 
     // Cape (behind torso)
     const capeGeo = new THREE.BoxGeometry(0.3, 0.35, 0.02);
-    const cape = new THREE.Mesh(capeGeo, capeMat);
-    cape.position.set(0, 0.48, 0.12);
-    this.bodyMesh.add(cape);
+    this.capeMesh = new THREE.Mesh(capeGeo, capeMat);
+    this.capeMesh.position.set(0, 0.48, 0.12);
+    this.bodyMesh.add(this.capeMesh);
 
     // Head
     const headGeo = new THREE.SphereGeometry(0.18, 8, 6);
@@ -106,15 +133,46 @@ export class Player {
     hat.position.y = 1.15;
     this.bodyMesh.add(hat);
 
+    // HP number label above head
+    this._hpLabelCanvas = document.createElement('canvas');
+    this._hpLabelCanvas.width = 64;
+    this._hpLabelCanvas.height = 32;
+    this._hpLabelCtx = this._hpLabelCanvas.getContext('2d');
+    this._hpLabelTexture = new THREE.CanvasTexture(this._hpLabelCanvas);
+    const hpLabelMat = new THREE.SpriteMaterial({
+      map: this._hpLabelTexture,
+      transparent: true,
+      depthTest: false,
+    });
+    this.hpLabelSprite = new THREE.Sprite(hpLabelMat);
+    this.hpLabelSprite.position.y = 1.45;
+    this.hpLabelSprite.scale.set(0.8, 0.4, 1);
+    this.bodyMesh.add(this.hpLabelSprite);
+    this._updateHpLabel();
+
     this.bodyMesh.castShadow = true;
     this.mesh.add(this.bodyMesh);
   }
 
+  _updateHpLabel() {
+    const ctx = this._hpLabelCtx;
+    ctx.clearRect(0, 0, 64, 32);
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(Math.round(this.hp)), 32, 16);
+    this._hpLabelTexture.needsUpdate = true;
+  }
+
   _buildWeaponMesh() {
-    if (this.weaponMesh) this.mesh.remove(this.weaponMesh);
+    if (this.weaponMesh && this.weaponMesh.parent) {
+      this.weaponMesh.parent.remove(this.weaponMesh);
+    }
     this.weaponMesh = WeaponFactory.createWeaponMesh(this.weaponIndex);
-    this.weaponMesh.position.set(0.5, PLAYER.size * 1.5, -0.3);
-    this.mesh.add(this.weaponMesh);
+    this.weaponMesh.position.set(0, 0.15, -0.05); // grip at hand, blade up/forward
+    this.weaponMesh.rotation.x = -_PI / 6; // forward tilt for isometric readability
+    this.handAnchor.add(this.weaponMesh);
   }
 
   _createSlashArc() {
@@ -147,6 +205,9 @@ export class Player {
       }
     }
 
+    // Update HP label
+    this._updateHpLabel();
+
     // Attack cooldown
     if (this.attackCooldownTimer > 0) {
       this.attackCooldownTimer -= dt;
@@ -156,8 +217,12 @@ export class Player {
     if (this.isAttacking) {
       this.attackAnimTimer -= dt;
       const t = 1 - (this.attackAnimTimer / 0.3);
-      // Swing weapon in an arc
-      this.weaponMesh.rotation.y = -_PI * 0.5 + Math.sin(t * _PI) * _PI;
+      // Arm swing: raised back (+0.8) through swept forward (-1.0)
+      this.rightArmPivot.rotation.x = 0.8 - t * 1.8;
+      // Cross-body sweep
+      this.rightArmPivot.rotation.z = Math.sin(t * _PI) * -0.3;
+      // Wrist flick for flair
+      this.weaponMesh.rotation.z = Math.sin(t * _PI) * 0.4;
       // Slash arc visual
       if (this.slashArc) {
         this.slashArc.visible = true;
@@ -165,12 +230,15 @@ export class Player {
         this.slashArc.material.opacity = Math.sin(t * _PI) * 0.4;
         this.slashArc.material.color.setHex(this.weapon.color);
       }
-      // Body lean into swing
-      this.bodyMesh.rotation.y = Math.sin(t * _PI) * 0.2;
-      this.bodyMesh.rotation.z = Math.sin(t * _PI) * 0.1;
+      // Subtle body lean (arm provides most feedback now)
+      this.bodyMesh.rotation.y = Math.sin(t * _PI) * 0.1;
+      this.bodyMesh.rotation.z = Math.sin(t * _PI) * 0.05;
       if (this.attackAnimTimer <= 0) {
         this.isAttacking = false;
-        this.weaponMesh.rotation.y = 0;
+        this.rightArmPivot.rotation.x = 0;
+        this.rightArmPivot.rotation.z = 0;
+        this.weaponMesh.rotation.x = -_PI / 6; // restore forward tilt
+        this.weaponMesh.rotation.z = 0;
         this.bodyMesh.rotation.y = 0;
         this.bodyMesh.rotation.z = 0;
         if (this.slashArc) {
@@ -256,6 +324,49 @@ export class Player {
       // Rotate mesh to face movement direction
       const angle = Math.atan2(move.x, move.z);
       this.mesh.rotation.y = angle + Math.PI;
+      this._isMoving = true;
+    } else {
+      this._isMoving = false;
+    }
+
+    // Walk cycle animation
+    if (this._isMoving) {
+      this._walkPhase += dt * 10;
+      const s = Math.sin(this._walkPhase);
+      // Leg swing
+      this.leftLegPivot.rotation.x = s * 0.5;
+      this.rightLegPivot.rotation.x = -s * 0.5;
+      // Arm swing opposite to legs (natural gait), skip right arm during attack
+      this.leftArmPivot.rotation.x = -s * 0.35;
+      if (!this.isAttacking) {
+        this.rightArmPivot.rotation.x = s * 0.35;
+      }
+      // Reset idle phase and body bob
+      this._idlePhase = 0;
+      this.bodyMesh.position.y = 0;
+    } else {
+      // Decay limbs to rest when stopping
+      const decay = Math.exp(-dt * 12);
+      this.leftLegPivot.rotation.x *= decay;
+      this.rightLegPivot.rotation.x *= decay;
+      this.leftArmPivot.rotation.x *= decay;
+      if (!this.isAttacking) {
+        this.rightArmPivot.rotation.x *= decay;
+      }
+      this._walkPhase = 0;
+
+      // Idle animation (breathing bob + subtle arm drift)
+      this._idlePhase += dt;
+      this.bodyMesh.position.y = Math.sin(this._idlePhase * 2) * 0.02;
+      const armDrift = Math.sin(this._idlePhase * 1.5) * 0.05;
+      this.leftArmPivot.rotation.x += armDrift;
+      if (!this.isAttacking) {
+        this.rightArmPivot.rotation.x += armDrift;
+      }
+      // Cape flutter
+      if (this.capeMesh) {
+        this.capeMesh.rotation.x = Math.sin(this._idlePhase * 2.5) * 0.04;
+      }
     }
 
     // Attack input
@@ -326,6 +437,19 @@ export class Player {
     this.weaponMesh.visible = true;
     this.invulnerable = true;
     this.invulnerableTimer = PLAYER.respawnInvulnerability;
+
+    // Reset animation state
+    this._walkPhase = 0;
+    this._idlePhase = 0;
+    this._isMoving = false;
+    this.leftLegPivot.rotation.x = 0;
+    this.rightLegPivot.rotation.x = 0;
+    this.leftArmPivot.rotation.x = 0;
+    this.rightArmPivot.rotation.x = 0;
+    this.rightArmPivot.rotation.z = 0;
+    this.bodyMesh.position.y = 0;
+    this.bodyMesh.rotation.y = 0;
+    this.bodyMesh.rotation.z = 0;
 
     // Clear saved progress
     try {

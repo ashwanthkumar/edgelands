@@ -37,6 +37,14 @@ export class Enemy {
     this.respawnTimer = 0;
     this._flashTimeout = null;
 
+    // Attack animation
+    this._attackAnimTimer = 0;
+    this._isAttackAnim = false;
+
+    // Walk animation
+    this._walkPhase = 0;
+    this._isMoving = false;
+
     // Visual size scales with log(strength)
     const scale = 0.3 + Math.log2(this.maxHp + 1) * 0.12;
     this.scale = Math.min(scale, 1.5);
@@ -60,9 +68,10 @@ export class Enemy {
       emissiveIntensity: 0.15,
     });
 
+    const legHeight = this.scale * 0.8;
     this.bodyMesh = new THREE.Mesh(geo, mat);
     this.bodyMesh.scale.setScalar(this.scale);
-    this.bodyMesh.position.y = this.scale;
+    this.bodyMesh.position.y = this.scale + legHeight;
     this.bodyMesh.castShadow = true;
     this.mesh.add(this.bodyMesh);
 
@@ -70,32 +79,59 @@ export class Enemy {
     const eyeGeo = new THREE.SphereGeometry(0.06 * this.scale, 6, 6);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeL.position.set(-0.2 * this.scale, this.scale * 1.2, -0.5 * this.scale);
+    eyeL.position.set(-0.2 * this.scale, this.scale * 1.2 + legHeight, -0.5 * this.scale);
     this.mesh.add(eyeL);
     const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeR.position.set(0.2 * this.scale, this.scale * 1.2, -0.5 * this.scale);
+    eyeR.position.set(0.2 * this.scale, this.scale * 1.2 + legHeight, -0.5 * this.scale);
     this.mesh.add(eyeR);
 
-    // HP bar background
-    const barBg = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 0.12),
-      new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide })
-    );
-    barBg.position.y = this.scale * 2.2;
-    barBg.rotation.x = -Math.PI / 4; // angle toward camera
-    this.mesh.add(barBg);
+    // Claw arms with pivot joints
+    const clawMat = new THREE.MeshLambertMaterial({
+      color: this.zone.color,
+      emissive: this.zone.color,
+      emissiveIntensity: 0.4,
+    });
+    const clawLen = this.scale * 1.0;
+    const clawGeo = new THREE.ConeGeometry(0.12 * this.scale, clawLen, 5);
 
-    // HP bar fill
-    this.hpBarMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0xff3333, side: THREE.DoubleSide })
-    );
-    this.hpBarMesh.position.y = this.scale * 2.2;
-    this.hpBarMesh.position.z = -0.001;
-    this.hpBarMesh.rotation.x = -Math.PI / 4;
-    this.mesh.add(this.hpBarMesh);
+    this.leftClawPivot = new THREE.Group();
+    this.leftClawPivot.position.set(-this.scale * 1.2, this.scale * 0.8 + legHeight, 0);
+    const clawL = new THREE.Mesh(clawGeo, clawMat);
+    clawL.position.y = -clawLen * 0.5;
+    this.leftClawPivot.add(clawL);
+    this.mesh.add(this.leftClawPivot);
 
-    // Strength label above HP bar
+    this.rightClawPivot = new THREE.Group();
+    this.rightClawPivot.position.set(this.scale * 1.2, this.scale * 0.8 + legHeight, 0);
+    const clawR = new THREE.Mesh(clawGeo, clawMat);
+    clawR.position.y = -clawLen * 0.5;
+    this.rightClawPivot.add(clawR);
+    this.mesh.add(this.rightClawPivot);
+
+    // Legs with pivot joints at bottom of body
+    const legMat = new THREE.MeshLambertMaterial({
+      color: this.zone.color,
+      emissive: this.zone.color,
+      emissiveIntensity: 0.2,
+    });
+    const legLen = legHeight;
+    const legGeo = new THREE.CylinderGeometry(0.12 * this.scale, 0.09 * this.scale, legLen, 6);
+
+    this.leftLegPivot = new THREE.Group();
+    this.leftLegPivot.position.set(-this.scale * 0.45, legHeight + this.scale * 0.15, 0);
+    const legL = new THREE.Mesh(legGeo, legMat);
+    legL.position.y = -legLen * 0.5;
+    this.leftLegPivot.add(legL);
+    this.mesh.add(this.leftLegPivot);
+
+    this.rightLegPivot = new THREE.Group();
+    this.rightLegPivot.position.set(this.scale * 0.45, legHeight + this.scale * 0.15, 0);
+    const legR = new THREE.Mesh(legGeo, legMat);
+    legR.position.y = -legLen * 0.5;
+    this.rightLegPivot.add(legR);
+    this.mesh.add(this.rightLegPivot);
+
+    // Strength label above head
     this._buildStrengthLabel();
   }
 
@@ -112,7 +148,7 @@ export class Enemy {
       depthTest: false,
     });
     this.labelSprite = new THREE.Sprite(spriteMat);
-    this.labelSprite.position.y = this.scale * 2.7;
+    this.labelSprite.position.y = this.scale * 2.2 + this.scale * 0.8;
     this.labelSprite.scale.set(1.0, 0.5, 1);
     this.mesh.add(this.labelSprite);
 
@@ -163,6 +199,31 @@ export class Enemy {
       this.bodyMesh.rotation.y += dt * 0.5;
     }
 
+    // Attack animation
+    if (this._isAttackAnim) {
+      this._attackAnimTimer -= dt;
+      const t = 1 - (this._attackAnimTimer / 0.3);
+      // Both claws swing forward (negative x = toward player)
+      const swing = Math.sin(t * Math.PI) * -1.2;
+      if (this.leftClawPivot) this.leftClawPivot.rotation.x = swing;
+      if (this.rightClawPivot) this.rightClawPivot.rotation.x = swing;
+      if (this._attackAnimTimer <= 0) {
+        this._isAttackAnim = false;
+        if (this.leftClawPivot) this.leftClawPivot.rotation.x = 0;
+        if (this.rightClawPivot) this.rightClawPivot.rotation.x = 0;
+      }
+    } else if (this.state === 'chase') {
+      // Subtle claw readiness while chasing
+      const ready = Math.sin(Date.now() * 0.006) * 0.2;
+      if (this.leftClawPivot) this.leftClawPivot.rotation.x = ready;
+      if (this.rightClawPivot) this.rightClawPivot.rotation.x = ready;
+    } else {
+      // Idle: gentle sway
+      const sway = Math.sin(Date.now() * 0.003) * 0.1;
+      if (this.leftClawPivot) this.leftClawPivot.rotation.x = sway;
+      if (this.rightClawPivot) this.rightClawPivot.rotation.x = -sway;
+    }
+
     // Check distance to player
     const player = this.game.player;
     if (!player || player.dead) {
@@ -183,11 +244,23 @@ export class Enemy {
       this._wander(dt);
     }
 
-    // Update HP bar
-    if (this.hpBarMesh) {
-      const ratio = this.hp / this.maxHp;
-      this.hpBarMesh.scale.x = Math.max(ratio, 0);
+    // Leg walk animation
+    if (this._isMoving) {
+      const legSpeed = this.state === 'chase' ? 12 : 8;
+      this._walkPhase += dt * legSpeed;
+      const s = Math.sin(this._walkPhase);
+      if (this.leftLegPivot) this.leftLegPivot.rotation.x = s * 0.6;
+      if (this.rightLegPivot) this.rightLegPivot.rotation.x = -s * 0.6;
+    } else {
+      // Decay to rest
+      const decay = Math.exp(-dt * 10);
+      if (this.leftLegPivot) this.leftLegPivot.rotation.x *= decay;
+      if (this.rightLegPivot) this.rightLegPivot.rotation.x *= decay;
+      this._walkPhase = 0;
     }
+
+    // Update HP label
+    this._updateStrengthLabel();
   }
 
   _wander(dt) {
@@ -200,8 +273,12 @@ export class Enemy {
     const dx = this.wanderTarget.x - this.mesh.position.x;
     const dz = this.wanderTarget.z - this.mesh.position.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
-    if (dist < 0.5) return;
+    if (dist < 0.5) {
+      this._isMoving = false;
+      return;
+    }
 
+    this._isMoving = true;
     const speed = ENEMY.wanderSpeed * (this.zone.speedMultiplier || 1) * dt;
     this.mesh.position.x += (dx / dist) * speed;
     this.mesh.position.z += (dz / dist) * speed;
@@ -211,17 +288,22 @@ export class Enemy {
 
   _chase(dt, dx, dz, dist) {
     if (dist > 1) {
+      this._isMoving = true;
       const speed = ENEMY.chaseSpeed * (this.zone.speedMultiplier || 1) * dt;
       this.mesh.position.x += (dx / dist) * speed;
       this.mesh.position.z += (dz / dist) * speed;
       this.mesh.rotation.y = Math.atan2(dx, dz);
       this._clampToZone();
+    } else {
+      this._isMoving = false;
     }
 
     // Attack player if close enough and zone is unlocked
     const em = this.game.enemyManager;
     if (dist < 1.5 && this.attackCooldownTimer <= 0 && em && em.zoneUnlocked[this.zoneIndex]) {
       this.attackCooldownTimer = ENEMY.attackCooldown;
+      this._isAttackAnim = true;
+      this._attackAnimTimer = 0.3;
       const damage = this.zoneIndex * 2;
       this.game.player.takeDamage(damage);
       if (this.game.audioManager) {
@@ -310,7 +392,6 @@ export class Enemy {
   recalculateHp() {
     this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
     this.hp = this.maxHp;
-    if (this.hpBarMesh) this.hpBarMesh.scale.x = 1;
     this._updateStrengthLabel();
   }
 
@@ -319,5 +400,13 @@ export class Enemy {
     this.recalculateHp();
     this.mesh.visible = true;
     this._placeInZone();
+    this._isAttackAnim = false;
+    this._attackAnimTimer = 0;
+    this._walkPhase = 0;
+    this._isMoving = false;
+    if (this.leftClawPivot) this.leftClawPivot.rotation.x = 0;
+    if (this.rightClawPivot) this.rightClawPivot.rotation.x = 0;
+    if (this.leftLegPivot) this.leftLegPivot.rotation.x = 0;
+    if (this.rightLegPivot) this.rightLegPivot.rotation.x = 0;
   }
 }
