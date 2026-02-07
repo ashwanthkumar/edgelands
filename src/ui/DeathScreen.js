@@ -31,15 +31,35 @@ export class DeathScreen {
 
     this.container.classList.add('active');
 
-    document.getElementById('death-share').addEventListener('click', () => {
+    const share = () => {
       window.open(shareUrl, '_blank', 'noopener,noreferrer');
-    });
-
-    document.getElementById('death-play').addEventListener('click', () => {
+    };
+    const playAgain = () => {
+      this._removeKeyListener();
       this.active = false;
       this.container.classList.remove('active');
       if (this.onRespawn) this.onRespawn();
-    });
+    };
+
+    document.getElementById('death-share').addEventListener('click', share);
+    document.getElementById('death-play').addEventListener('click', playAgain);
+
+    this._deathKeydown = (e) => {
+      if (!this.active) return;
+      if (e.key === 'x' || e.key === 'X') {
+        share();
+      } else if (e.key === 'Enter') {
+        playAgain();
+      }
+    };
+    window.addEventListener('keydown', this._deathKeydown);
+  }
+
+  _removeKeyListener() {
+    if (this._deathKeydown) {
+      window.removeEventListener('keydown', this._deathKeydown);
+      this._deathKeydown = null;
+    }
   }
 
   update(dt) {
