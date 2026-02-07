@@ -104,3 +104,6 @@ const titleScreen = new TitleScreen(() => {
 });
 game.titleScreen = titleScreen;
 titleScreen.show();
+
+// Expose for tooling (screenshots, video recording)
+window.__game = game;
