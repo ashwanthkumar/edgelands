@@ -14,6 +14,7 @@ import { Settings } from './ui/Settings.js';
 import { TitleScreen } from './ui/TitleScreen.js';
 import { ZoneClearOverlay } from './ui/ZoneClearOverlay.js';
 import { HelpOverlay } from './ui/HelpOverlay.js';
+import { CreditsOverlay } from './ui/CreditsOverlay.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
@@ -85,6 +86,10 @@ game.zoneClearOverlay = zoneClearOverlay;
 // Help overlay
 const helpOverlay = new HelpOverlay(game);
 game.helpOverlay = helpOverlay;
+
+// Credits overlay
+const creditsOverlay = new CreditsOverlay(game);
+game.creditsOverlay = creditsOverlay;
 
 // Title screen — defer game start until player clicks "Start Game"
 const titleScreen = new TitleScreen(() => {

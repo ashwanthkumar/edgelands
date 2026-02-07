@@ -32,6 +32,7 @@ export class HelpOverlay {
         <div class="help-section">
           <h3>General</h3>
           <div class="help-row"><span class="help-key">?</span><span>Toggle this help</span></div>
+          <div class="help-row"><span class="help-key">C</span><span>Credits</span></div>
         </div>
         <div class="help-dismiss">Press <span class="help-key">?</span> or <span class="help-key">Esc</span> to close</div>
       </div>
