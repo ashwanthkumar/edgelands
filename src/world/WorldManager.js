@@ -29,6 +29,7 @@ export class WorldManager {
     if (this.boundaryMesh) {
       this.scene.remove(this.boundaryMesh);
       this.boundaryMesh.geometry.dispose();
+      this.boundaryMesh.material.dispose();
     }
     const maxR = ZoneManager.getMaxRadius();
     this._boundaryRadius = maxR;

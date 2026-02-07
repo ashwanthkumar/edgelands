@@ -1,4 +1,5 @@
 import { ZoneManager } from '../config/constants.js';
+import { colorToHex } from '../utils.js';
 
 export class Minimap {
   constructor(game) {
@@ -23,7 +24,7 @@ export class Minimap {
     ctx.clearRect(0, 0, s, s);
 
     // Compute scale based on current max generated radius
-    const maxRadius = ZoneManager.getMaxRadius();
+    const maxRadius = Math.max(ZoneManager.getMaxRadius(), 1);
     const scale = s / (maxRadius * 2);
 
     // Draw zone rings
@@ -33,10 +34,7 @@ export class Minimap {
       const outerR = zone.outerRadius * scale;
       ctx.beginPath();
       ctx.arc(center, center, outerR, 0, Math.PI * 2);
-      const color = typeof zone.color === 'number'
-        ? `#${zone.color.toString(16).padStart(6, '0')}`
-        : `#${zone.color}`;
-      ctx.fillStyle = color;
+      ctx.fillStyle = colorToHex(zone.color);
       ctx.fill();
     }
 

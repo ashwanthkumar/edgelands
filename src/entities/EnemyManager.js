@@ -28,6 +28,12 @@ export class EnemyManager {
     }
   }
 
+  recalculateAllEnemies() {
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.enemies[i].recalculateHp();
+    }
+  }
+
   onEnemyKilled(zoneIndex) {
     // Grow arrays if needed
     while (this.zoneKills.length <= zoneIndex) {
@@ -131,15 +137,13 @@ export class EnemyManager {
     for (let i = 0; i < this.zoneUnlocked.length; i++) {
       this.zoneUnlocked[i] = (i <= 1);
     }
-    // Respawn all enemies to full HP
+    // Respawn all enemies to full HP (recalculate in case difficulty changed)
     for (let i = 0; i < this.enemies.length; i++) {
       const enemy = this.enemies[i];
       enemy.alive = true;
-      enemy.hp = enemy.maxHp;
+      enemy.recalculateHp();
       enemy.mesh.visible = true;
       enemy._placeInZone();
-      if (enemy.hpBarMesh) enemy.hpBarMesh.scale.x = 1;
-      enemy._updateStrengthLabel();
     }
     // Clear localStorage
     try {

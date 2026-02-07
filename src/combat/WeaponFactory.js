@@ -3,6 +3,7 @@ import { WEAPONS } from '../config/constants.js';
 
 export class WeaponFactory {
   static createWeaponMesh(weaponIndex) {
+    weaponIndex = Math.max(0, Math.min(weaponIndex, WEAPONS.length - 1));
     const w = WEAPONS[weaponIndex];
     const group = new THREE.Group();
 

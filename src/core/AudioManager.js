@@ -12,17 +12,20 @@ export class AudioManager {
 
     // Init on first user interaction
     this._initOnInteraction = () => {
-      if (!this._initialized) {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this._initialized = true;
-        if (this.musicEnabled) {
-          this.startMusic();
-        }
+      if (this._initialized) return;
+      this._initialized = true;
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Remove remaining listeners since only one needs to fire
+      window.removeEventListener('click', this._initOnInteraction);
+      window.removeEventListener('keydown', this._initOnInteraction);
+      window.removeEventListener('touchstart', this._initOnInteraction);
+      if (this.musicEnabled) {
+        this.startMusic();
       }
     };
-    window.addEventListener('click', this._initOnInteraction, { once: false });
-    window.addEventListener('keydown', this._initOnInteraction, { once: false });
-    window.addEventListener('touchstart', this._initOnInteraction, { once: false });
+    window.addEventListener('click', this._initOnInteraction);
+    window.addEventListener('keydown', this._initOnInteraction);
+    window.addEventListener('touchstart', this._initOnInteraction);
   }
 
   _loadSettings() {
@@ -35,7 +38,7 @@ export class AudioManager {
     } catch (e) { /* ignore */ }
   }
 
-  _saveSettings() {
+  saveSettings() {
     try {
       localStorage.setItem('edgelands_settings', JSON.stringify({
         musicEnabled: this.musicEnabled,
@@ -60,7 +63,8 @@ export class AudioManager {
   }
 
   startMusic() {
-    if (this._musicPlaying || !this.ctx) return;
+    if (!this.ctx) return;
+    if (this._musicPlaying) return;
     this._musicPlaying = true;
 
     const masterGain = this.ctx.createGain();
@@ -129,14 +133,15 @@ export class AudioManager {
     const { masterGain, oscillators } = this._musicNodes;
     const now = this.ctx.currentTime;
     masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-    masterGain.gain.linearRampToValueAtTime(0, now + 1);
-    setTimeout(() => {
-      for (const osc of oscillators) {
-        try { osc.stop(); } catch (e) { /* already stopped */ }
-      }
-    }, 1100);
+    masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
+    const nodes = this._musicNodes;
     this._musicPlaying = false;
     this._musicNodes = null;
+    setTimeout(() => {
+      for (const osc of nodes.oscillators) {
+        try { osc.stop(); } catch (e) { /* already stopped */ }
+      }
+    }, 400);
   }
 
   _playTone(freq, duration, type = 'sine', volume = 0.1, endFreq = null) {

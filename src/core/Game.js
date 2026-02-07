@@ -116,14 +116,14 @@ export class Game {
       return;
     }
 
-    // Update all systems
+    // Update all systems (tweens included inside pause guard)
     this.tweens.update(dt);
     for (const system of this.systems) {
       system.update(dt);
     }
 
     // Camera follow player
-    if (this.player) {
+    if (this.player && this.player.mesh) {
       const px = this.player.mesh.position.x;
       const pz = this.player.mesh.position.z;
       this.camera.position.set(

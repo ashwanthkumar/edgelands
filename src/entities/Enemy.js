@@ -24,7 +24,6 @@ export class Enemy {
     this.zoneIndex = zoneIndex;
     this.zone = ZoneManager.getZone(zoneIndex);
     this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
-    this.strength = this.maxHp; // backward compat for drops/labels
     this.hp = this.maxHp;
     this.alive = true;
     this.attackCooldownTimer = 0;
@@ -36,9 +35,10 @@ export class Enemy {
 
     // Respawn
     this.respawnTimer = 0;
+    this._flashTimeout = null;
 
     // Visual size scales with log(strength)
-    const scale = 0.3 + Math.log2(this.strength + 1) * 0.12;
+    const scale = 0.3 + Math.log2(this.maxHp + 1) * 0.12;
     this.scale = Math.min(scale, 1.5);
 
     // Build mesh
@@ -234,6 +234,7 @@ export class Enemy {
     const x = this.mesh.position.x;
     const z = this.mesh.position.z;
     const dist = Math.sqrt(x * x + z * z);
+    if (dist < 0.001) return; // at origin — skip to avoid div-by-zero
     const inner = this.zone.innerRadius + 0.5;
     const outer = this.zone.outerRadius - 0.5;
 
@@ -255,7 +256,9 @@ export class Enemy {
     // Flash red
     if (this.bodyMesh) {
       this.bodyMesh.material.emissiveIntensity = 0.8;
-      setTimeout(() => {
+      if (this._flashTimeout) clearTimeout(this._flashTimeout);
+      this._flashTimeout = setTimeout(() => {
+        this._flashTimeout = null;
         if (this.bodyMesh && this.bodyMesh.material) {
           this.bodyMesh.material.emissiveIntensity = 0.15;
         }
@@ -270,6 +273,10 @@ export class Enemy {
   die() {
     this.alive = false;
     this.mesh.visible = false;
+    if (this._flashTimeout) {
+      clearTimeout(this._flashTimeout);
+      this._flashTimeout = null;
+    }
     this.respawnTimer = ENEMY.respawnTimeMin + Math.random() * (ENEMY.respawnTimeMax - ENEMY.respawnTimeMin);
 
     // Death particles
@@ -296,18 +303,21 @@ export class Enemy {
 
     // Notify pickup manager to drop loot
     if (this.game.pickupManager) {
-      this.game.pickupManager.spawnDrop(this.mesh.position.x, this.mesh.position.z, this.strength);
+      this.game.pickupManager.spawnDrop(this.mesh.position.x, this.mesh.position.z, this.maxHp);
     }
+  }
+
+  recalculateHp() {
+    this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
+    this.hp = this.maxHp;
+    if (this.hpBarMesh) this.hpBarMesh.scale.x = 1;
+    this._updateStrengthLabel();
   }
 
   _respawn() {
     this.alive = true;
-    this.maxHp = getDifficulty().hitsToKill * this.zoneIndex;
-    this.strength = this.maxHp;
-    this.hp = this.maxHp;
+    this.recalculateHp();
     this.mesh.visible = true;
     this._placeInZone();
-    if (this.hpBarMesh) this.hpBarMesh.scale.x = 1;
-    this._updateStrengthLabel();
   }
 }

@@ -1,7 +1,6 @@
 export class InputManager {
   constructor() {
     this.keys = { w: false, a: false, s: false, d: false };
-    this.attack = false;
     this._attackPressed = false;
 
     // -45° rotation for isometric: rotate input so W = screen-up
@@ -81,6 +80,7 @@ export class InputManager {
 
       // Clamp to max offset
       const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.001) return; // dead center — no movement
       if (dist > maxThumbOffset) {
         dx = (dx / dist) * maxThumbOffset;
         dy = (dy / dist) * maxThumbOffset;
@@ -189,5 +189,10 @@ export class InputManager {
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup', this._onKeyUp);
     window.removeEventListener('mousedown', this._onMouseDown);
+    if (this._touchElements) {
+      const { base, attackBtn } = this._touchElements;
+      base.replaceWith(base.cloneNode(true));
+      attackBtn.replaceWith(attackBtn.cloneNode(true));
+    }
   }
 }

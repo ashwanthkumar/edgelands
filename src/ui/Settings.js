@@ -60,13 +60,13 @@ export class Settings {
       } else {
         audio.stopMusic();
       }
-      audio._saveSettings();
+      audio.saveSettings();
     });
 
     document.getElementById('settings-sfx').addEventListener('change', (e) => {
       if (!audio) return;
       audio.sfxEnabled = e.target.checked;
-      audio._saveSettings();
+      audio.saveSettings();
     });
 
     document.getElementById('settings-reset').addEventListener('click', () => {

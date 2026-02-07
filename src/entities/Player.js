@@ -222,7 +222,7 @@ export class Player {
       // Clamp to max generated zone boundary
       let dist = Math.sqrt(newX * newX + newZ * newZ);
       const worldMax = ZoneManager.getMaxRadius();
-      if (dist >= worldMax) {
+      if (dist >= worldMax && dist > 0.001) {
         const clamp = worldMax / dist;
         newX = newX * clamp;
         newZ = newZ * clamp;
@@ -230,7 +230,7 @@ export class Player {
       }
 
       // Zone gating: clamp to max unlocked zone's outer radius
-      if (this.game.enemyManager) {
+      if (this.game.enemyManager && dist > 0.001) {
         const maxUnlocked = this.game.enemyManager.getMaxUnlockedZone();
         const maxRadius = ZoneManager.getZone(maxUnlocked).outerRadius;
         if (dist > maxRadius) {

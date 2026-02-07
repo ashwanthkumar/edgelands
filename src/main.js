@@ -89,6 +89,8 @@ game.helpOverlay = helpOverlay;
 // Title screen — defer game start until player clicks "Start Game"
 const titleScreen = new TitleScreen(() => {
   if (!game._running) {
+    // Apply chosen difficulty to all enemies before first frame
+    enemies.recalculateAllEnemies();
     game.start();
   } else {
     // Restart after game over

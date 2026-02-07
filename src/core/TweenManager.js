@@ -16,7 +16,8 @@ export class Tween {
   update(dt) {
     if (this.done) return;
     this.elapsed += dt;
-    const t = Math.min(this.elapsed / this.duration, 1);
+    // Guard against zero-duration tweens (would produce NaN from 0/0)
+    const t = this.duration <= 0 ? 1 : Math.min(this.elapsed / this.duration, 1);
     const e = this.easing(t);
 
     for (const key in this.props) {
@@ -31,8 +32,6 @@ export class Tween {
   }
 
   static easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-  static easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
-  static linear(t) { return t; }
 }
 
 export class TweenManager {

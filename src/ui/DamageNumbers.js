@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { formatNumber } from '../utils.js';
 
 export class DamageNumbers {
   constructor(game) {
@@ -15,7 +16,7 @@ export class DamageNumbers {
 
     const el = document.createElement('div');
     el.className = 'damage-number';
-    el.textContent = this._formatNumber(amount);
+    el.textContent = formatNumber(amount);
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
     el.style.color = `#${color.toString(16).padStart(6, '0')}`;
@@ -52,12 +53,6 @@ export class DamageNumbers {
     setTimeout(() => {
       if (el.parentNode) el.parentNode.removeChild(el);
     }, 800);
-  }
-
-  _formatNumber(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-    return String(n);
   }
 
   update(dt) {}

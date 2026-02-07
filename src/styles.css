@@ -13,10 +13,8 @@ html, body {
 
 #game-container {
   width: 100vw;
-  height: 100dvh;
-  height: 100vh; /* fallback for older browsers */
-  height: 100dvh;
-  position: relative;
+  height: 100vh;
+  height: 100dvh; /* override for browsers supporting dvh */
   position: fixed;
   top: 0;
   left: 0;

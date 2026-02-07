@@ -41,9 +41,10 @@ export class DeathScreen {
       if (this.onRespawn) this.onRespawn();
     };
 
-    document.getElementById('death-share').addEventListener('click', share);
-    document.getElementById('death-play').addEventListener('click', playAgain);
+    document.getElementById('death-share').addEventListener('click', share, { once: true });
+    document.getElementById('death-play').addEventListener('click', playAgain, { once: true });
 
+    this._removeKeyListener();
     this._deathKeydown = (e) => {
       if (!this.active) return;
       if (e.key === 'x' || e.key === 'X') {

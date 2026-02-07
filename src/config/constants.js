@@ -92,6 +92,16 @@ class _ZoneManager {
   }
 
   getZoneForRadius(dist) {
+    // Expand cache if dist exceeds all known zones
+    const last = this._cache[this._cache.length - 1];
+    if (dist >= last.outerRadius) {
+      // Generate zones until dist is covered
+      let idx = this._cache.length;
+      while (this._cache[idx - 1].outerRadius <= dist) {
+        this.getZone(idx);
+        idx++;
+      }
+    }
     // Check cached zones from highest to lowest
     for (let i = this._cache.length - 1; i >= 0; i--) {
       if (dist >= this._cache[i].innerRadius) return i;

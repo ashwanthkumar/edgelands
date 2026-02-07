@@ -76,7 +76,10 @@ export class ParticleSystem {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const alive = this.particles[i].update(dt);
       if (!alive) {
-        this.game.scene.remove(this.particles[i].mesh);
+        const mesh = this.particles[i].mesh;
+        this.game.scene.remove(mesh);
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) mesh.material.dispose();
         this.particles.splice(i, 1);
       }
     }

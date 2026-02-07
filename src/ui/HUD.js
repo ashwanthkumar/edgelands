@@ -1,4 +1,5 @@
 import { ZoneManager, WEAPONS } from '../config/constants.js';
+import { formatNumber, colorToHex } from '../utils.js';
 
 export class HUD {
   constructor(game) {
@@ -40,7 +41,7 @@ export class HUD {
     this.hpText.textContent = `HP: ${Math.ceil(p.hp)} / ${p.maxHp}`;
 
     // Points
-    this.pointsText.textContent = `Points: ${this._formatNum(p.points)}`;
+    this.pointsText.textContent = `Points: ${formatNumber(p.points)}`;
 
     // Weapon
     this.weaponText.textContent = `${p.weapon.name} (${p.getDamage()} dmg)`;
@@ -56,10 +57,7 @@ export class HUD {
     const zi = p.getCurrentZone();
     const zone = ZoneManager.getZone(zi);
     this.zoneText.textContent = zone.name;
-    const colorHex = typeof zone.color === 'number'
-      ? `#${zone.color.toString(16).padStart(6, '0')}`
-      : `#${zone.color}`;
-    this.zoneText.style.color = colorHex;
+    this.zoneText.style.color = colorToHex(zone.color);
 
     // Safe zone indicator
     if (zi === 0) {
@@ -81,9 +79,4 @@ export class HUD {
     }
   }
 
-  _formatNum(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-    return String(n);
-  }
 }
